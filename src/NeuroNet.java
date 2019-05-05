@@ -10,10 +10,10 @@
 
 
 
+
         return;
     }
 }
-
 
 class Neuron {
     double xnac;
