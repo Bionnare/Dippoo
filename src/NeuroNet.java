@@ -51,7 +51,12 @@ public class NeuroNet {
                 //System.out.print(p + " ");
             }
         }
-        neuroBody(); // ввод в нейросеть
+        // 1000 итераций
+        int iter = 1;
+        while(iter <= 1000) {
+            neuroBody(); // ввод в нейросеть
+            iter++;
+        }
         // устанавливаем параметры по умолчанию
         a++;
         b = 1;
