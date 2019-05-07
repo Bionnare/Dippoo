@@ -2,21 +2,31 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Imagination {
     public static void main(String[] args) throws IOException {
         Finder finder = new Finder();
+        NeuroNet neuronet = new NeuroNet();
         BufferedImage image = null;
 
+        /*FileReader fr = new FileReader("");
+        Scanner in = new Scanner(fr);
+        while (in.hasNextLine()) { // загрузка текста из файла
+            text += in.nextLine();
+        }
+        fr.close();*/
+
         try {
-            image = ImageIO.read(Imagination.class.getResource("пр1.png")); // загрузка из файла изображения (src\ .png)
+            image = ImageIO.read(Imagination.class.getResource("Save/neuron1.png")); // загрузка из файла изображения (src\ .png)
         } catch (IOException e) {
             System.out.println("Error: " + e);
         }
 
-        //image = resize(image, 100, 100); // изменение размера изображения
-        ImageIO.write(image, "PNG", new File("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/Безымянный.png")); // сохранение файла
+        //ImageIO.write(image, "PNG", new File("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/Безымянный.png")); // сохранение файла
 
         int width = image.getWidth(); // ширина изображения
         int height = image.getHeight(); // высота изображения
@@ -45,23 +55,28 @@ public class Imagination {
                 }*/
 
 
-                //pixels[row][col] = g; // использование одного цвета
+                //pixels[row][col] = r; // использование одного цвета
                 pixels[row][col] = (r + g + b) / 3; // использование трех цветов
                 pixels[row][col] = Math.round(pixels[row][col]*100)/100.0; // преобразование числа до сотых после запятой
                 //System.out.print(pixels[row][col] + " ");
             }
         }
 
-        finder.stringFind(pixels,height,width); // искатель строк и, в будущем, символов (пока не в настоящем)
-    }
+        /*
+        // быстрое заполнение файлов_весов
+        int ne = 1;
+        for(int x = 0; x < 20; x++) {
+            FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 20.txt"); // запись текста в файл
+            for (int z = 0; z < 1024; z++) { // запись данных в файлы_весов
+                String lineSeparator = System.getProperty("line.separator");
+                fv.write(1 + lineSeparator);
+            }
+            fv.close();
+            ne++;
+        }*/
 
-    private static BufferedImage resize(BufferedImage img, int height, int width) { // стандартизация изображения под один размер
-        Image tmp = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = resized.createGraphics();
-        g2d.drawImage(tmp, 0, 0, null);
-        g2d.dispose();
-        return resized;
+        //finder.stringFind(pixels,height,width); // искатель строк и, в будущем, символов (уже в настоящем)
+        neuronet.preporation(image); // метод проверки нейросети одним символом
     }
 }
 
