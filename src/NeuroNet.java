@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Scanner;
 
 public class NeuroNet {
-    List<Neuron> neurons = new ArrayList<>(); // список нейронов слоя
+    List<Neuron> neurons = new ArrayList<>(); // список нейронов текущего слоя
+
     int x = 1; // счетчик файлов
     int a = 1, b = 1, c = 1024; // значения для счетчика БД_весов
     int sl = 20; // размер следующего слоя
