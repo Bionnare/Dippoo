@@ -41,7 +41,6 @@ public class Imagination {
                 // вывод матрицы-значений изображения/255 (все оттенки цвета имеют одинаковое значение); диапазон (0,1);
                 // использование вычитания нужно, чтобы задать белый цвет как '0', а черный цвет - '1' (в RGB - значения противоположны)
 
-
                 // настройка яркости пикселей (пока не нужно)
                 /*if(((r >= 0.05 & r <= 0.8) & (g >= 0.05 & g <= 0.8) & (b >= 0.05 & b <= 0.8))){
                     if ((r >= g - 0.3 & r <= g + 0.3) | (r >= b - 0.3 & r <= b + 0.3) | (g >= b - 0.3 & g <= b + 0.3) |
@@ -54,7 +53,6 @@ public class Imagination {
                     }
                 }*/
 
-
                 //pixels[row][col] = r; // использование одного цвета
                 pixels[row][col] = (r + g + b) / 3; // использование трех цветов
                 pixels[row][col] = Math.round(pixels[row][col]*100)/100.0; // преобразование числа до сотых после запятой
@@ -66,7 +64,7 @@ public class Imagination {
         // быстрое заполнение файлов_весов
         int ne = 1;
         for(int x = 0; x < 20; x++) {
-            FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 20.txt"); // запись текста в файл
+            FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 1024.txt"); // запись текста в файл
             for (int z = 0; z < 1024; z++) { // запись данных в файлы_весов
                 String lineSeparator = System.getProperty("line.separator");
                 fv.write(1 + lineSeparator);
