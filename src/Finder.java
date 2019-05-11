@@ -485,9 +485,6 @@ public class Finder extends Applet {
                 if (nn > 3) { // используем массивы с шириной больше '3'
                     itsSymbol = true;
                     crimg(newPict, height, nn); // ВЫГРУЗКА СИМВОЛОВ КАК ИЗОБРАЖЕНИЙ
-
-                    // ЗДЕСЬ ДОЛЖНА БЫТЬ ПЕРЕДАЧА ВЕКТОРА ИЗОБРАЖЕНИЯ В НЕЙРОСЕТЬ
-
                 }
 
                 // устанавливаем значения по умолчанию
@@ -563,12 +560,14 @@ public class Finder extends Applet {
                 i++;
             }
         }
-        if(analyzerLetter){
+        if(analyzerLetter){ // если изображение - символ, то передается в нейросеть
             //System.out.println("cycle="+sc);
-            //neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
+            neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
+            //neuronet.trainer(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В ОБУЧАТЕЛЬ
+
         }
         //System.out.println(sc);
-        //ImageIO.write(img, "PNG", f); // сохранение изображения
+        ImageIO.write(img, "PNG", f); // сохранение изображения
         sc++;
     }
 }
