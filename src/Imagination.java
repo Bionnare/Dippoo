@@ -14,7 +14,7 @@ public class Imagination {
         BufferedImage image = null;
 
         try {
-            image = ImageIO.read(Imagination.class.getResource("пр1.png")); // загрузка из файла изображения (src\ .png)
+            image = ImageIO.read(Imagination.class.getResource("Save/img160.png")); // загрузка из файла изображения (src\ .png)
         } catch (IOException e) {
             System.out.println("Error: " + e);
         }
@@ -55,8 +55,8 @@ public class Imagination {
         // быстрая генерация весов в БД_весов
         /*int ne = 1;
         for(int x = 0; x < 20; x++) {
-            FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 1024.txt"); // запись текста в файл
-            for (int z = 0; z < 1024; z++) { // запись данных в файлы_весов
+            FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 784.txt"); // запись текста в файл
+            for (int z = 0; z < 784; z++) { // запись данных в файлы_весов
                 double rand;
                 int r = (int) (Math.random()*(10+1)) - 5;
                 rand = (double) r/10;
@@ -68,9 +68,9 @@ public class Imagination {
             ne++;
         }*/
 
-        finder.stringFind(pixels,height,width); // основной метод запуска нейросети
-        //neuronet.preporation(image); // метод проверки нейросети одним символом
-        //neuronet.trainer(img); // основной метод обучение нейросети
+        //finder.stringFind(pixels,height,width); // основной метод запуска нейросети
+        neuronet.preporation(image); // метод проверки нейросети одним символом
+        //neuronet.trainer(image); // основной метод обучение нейросети
     }
 }
 

@@ -15,17 +15,17 @@ import java.util.Scanner;
 
 public class NeuroNet {
     List<Neuron> neurons = new ArrayList<>(); // список нейронов текущего слоя
-    double[][] weightMatrix1 = new double[20][1024]; // матрица весов первого слоя
+    double[][] weightMatrix1 = new double[20][784]; // матрица весов первого слоя
     double[][] weightMatrix2 = new double[20][20]; // матрица весов скрытого слоя
-    double[][] weightMatrix3 = new double[17][20]; // матрица второго скрытого слоя
+    double[][] weightMatrix3 = new double[16][20]; // матрица второго скрытого слоя
 
-    double[] in = new double[1024]; // массив значений входного слоя
+    double[] in = new double[784]; // массив значений входного слоя
     double[] h1 = new double[20]; // массив значений первого скрытого слоя
     double[] h2 = new double[20]; // массив значений второго скрытого слоя
-    double[] result = new double[17]; // массив выходных значений нейросети
+    double[] result = new double[16]; // массив выходных значений нейросети
 
     int x = 1; // счетчик файлов
-    int a = 1, b = 1, c = 1024; // значения для счетчика БД_весов
+    int a = 1, b = 1, c = 784; // значения для счетчика БД_весов
     int sl = 20; // размер следующего слоя
     double[] znac = new double[c]; // значения нейронов для текущего слоя
     double[] newZnac = new double[sl]; // выходные значения нейронов для текущего слоя
@@ -37,7 +37,7 @@ public class NeuroNet {
         String string = "C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/neuron" + x + ".png"; // используем сохраненные в папке 'Save' изображения символов
         File f = new File(string);
         //System.out.println("cycle="+x);
-        image = resize(image, 32, 32); // изменяем размер под стандарт
+        image = resize(image, 28, 28); // изменяем размер под стандарт
         //ImageIO.write(image, "PNG", f); // сохранение изображения
 
         // записываем пиксели в массив значений нейронов
@@ -59,6 +59,9 @@ public class NeuroNet {
                 //double p = red; // использование одного цвета
                 double p = (red + green + blue) / 3; // использование трех цветов
                 p = Math.round(p*100)/100.0; // преобразование числа до сотых после запятой
+                if(p < 0.4){
+                    p = 0;
+                }
                 znac[q] = p;
                 in[q] = p;
                 fv.write(znac[q] + lineSeparator);
@@ -71,7 +74,7 @@ public class NeuroNet {
         for (a = 1; a < 4; a++) {
             if (a == 1){ // для входного слоя
                 b = 1;
-                c = 1024;
+                c = 784;
                 sl = 20;
             }
             if (a == 2){ // для первого скрытого слоя
@@ -86,7 +89,7 @@ public class NeuroNet {
             if (a == 3){ // для второго скрытого слоя
                 b = 1;
                 c = 20;
-                sl = 17;
+                sl = 16;
                 for(int u = 0; u < newZnac.length; u++){ // запись в память значений слоя
                     h2[u] = newZnac[u];
                 }
@@ -107,8 +110,8 @@ public class NeuroNet {
         // устанавливаем параметры по умолчанию
         a = 1;
         b = 1;
-        c = 1024;
-        x++; // ПОКА! (ИСПРАВИТЬ!) при работе обучателя, комментить этот инкремент
+        c = 784;
+        //x++; // ПОКА! (ИСПРАВИТЬ!) при работе обучателя, комментить этот инкремент
     }
 
     // КООРДИНАТОР НЕЙРОСЕТИ
@@ -184,12 +187,17 @@ public class NeuroNet {
         for (Neuron n : neuro){
             //System.out.println("№файла="+a+"."+b+" znachenie="+n.getX() + " ves="+n.getW());
             u += n.getX() * n.getW();
+            //u = (Math.round(u*1000))/1000.0; // преобразование числа до сотых после запятой
+            //u = Math.round(u); // преобразование числа до сотых после запятой
             //System.out.println("ПРОВЕРКА ЦИКЛА СУММИРОВАНИЯ: u"+a+"."+b+"= "+u);
         }
         //System.out.println("u"+a+"."+b+"= "+uu);
-        //u = Math.round(u*1000)/1000.0; // преобразование числа до сотых после запятой
         res = activating(u); // функция активации
-        String format = new DecimalFormat("#.#####").format(res).replaceAll(",", ".");
+
+        //res = Math.round(res); // преобразование числа до сотых после запятой
+        System.out.println("№файла="+a+"."+b+"Функция активации="+res+" u="+u);
+
+        String format = new DecimalFormat("#.###").format(res).replaceAll(",", ".");
         res = Double.parseDouble(format); // задаем кол-во знаков после запятой
 
         return res;
@@ -197,15 +205,22 @@ public class NeuroNet {
 
     // ФУНКЦИЯ АКТИВАЦИЯ
     public double activating (double u){
+        //double e = Math.E; // нахождение экспоненты
+        //e = Math.round(e*10)/10.0; // преобразование числа до сотых после запятой
+
 
         // модифицированная функция активации 'Relu' [ max(0, x) ] при отрицательных значениях используется 'Линейная функция' [ 0.1*x ]
         double uu;
+
         if (u < 0){
-            uu = 0.1*u;
+            uu = 0;
         }
         else {
             uu = 1;
         }
+
+        /*uu = Math.pow(e, -u);
+        uu = 1/uu;*/
 
         //double uu = Math.tanh(u);
 
@@ -296,6 +311,21 @@ public class NeuroNet {
         return uu;
     }
 
+
+    // ФУНКЦИЯ АКТИВАЦИЯ
+    public double derivative (double u){
+
+        double uu;
+
+        uu = 1 - activating(u);
+        uu = activating(u) * uu;
+
+        //uu = Math.round(uu*1000)/1000.0; // преобразование числа до сотых после запятой
+        String format = new DecimalFormat("#.###").format(uu).replaceAll(",", ".");
+        uu = Double.parseDouble(format); // задаем кол-во знаков после запятой
+        return uu;
+    }
+
     // ПЕРЕЗАПИСЬ МАССИВА ЗНАЧЕНИЙ ТЕКУЩЕГО СЛОЯ
     public void rewrite () throws IOException {
         znac = new double[c]; // выходные значения текущего слоя
@@ -339,66 +369,45 @@ public class NeuroNet {
     // ОБУЧАТЕЛЬ
     public void trainer (BufferedImage image) throws IOException{
         // очередь правильных значений при обучении нейросети
-        int[] queue = {10,11,12,13,16,0,3,4,5,6,9,8,2,7,1,14,15,
-                        10,12,13,11,0,1,3,2,5,4,7,8,9,14,16,15,6,
-                        12,13,16,1,16,1,0,14,15,
-                        10,11,16,2,9,8,16,3,5,6,15,7,4,14,15,
-                        0,6,5,4,10,14,2,9,8,12,1,11,16,3,7,15,13,
-                        5,9,7,9,0,0,11,10,5,4,9,8,1,2,14,15,15,12,13,10,2,3,6,16,
-                        10,11,16,9,8,16,1,5,0,0,0,14,15,
-                        10,11,16,1,0,0,16,9,8,15,5,0,14,15,
-                        12,13,16,1,16,5,6,15,7,7,14,15,
-                        12,13,16,2,3,0,15,4,5,14,15,
-                        1,0,0,2,3,0,3,4,0,4,5,0,5,0,9,9,1,1,0,9,0,2,0,0,5,0,0,1,0,0,0,
-        15,0,0,15,9,9,1,0,0,15,15,5,0,1,5,0,15,1,3,0,15,14,15,
-                        8,9,10,1,5,13,12,15,7,4,0,14,16,11,2,6,3,
-                        10,11,12,13,10,11,16,12,13,16,10,11,16,9,8,10,11,16,1,0,0,
-        10,11,16,9,5,12,13,16,1,12,13,16,2,12,13,16,
-                        13,5,7,1,11,14,8,0,9,2,12,10,16,4,15,3,6,
-                        15,7,6,1,14,0,2,10,12,13,5,8,4,11,16,3,
-                        9,12,3,15,5,1,14,16,10,2,11,8,13,4,0,6,7,
-                        0,1,7,14,3,9,
-                        9,4,12,2,6,
-                        10,16,15,5,11,13,
-                        9,8,10,
-                        7,14,15,16,
-                        10,11,12,13,14,15,0,15,0,0,15,5,0,0,15,9,9,10,11,16,12,13,16,16,
-        1,0,1,0,0,9,8,9,5,9,9,1,2,0,10,11,16,9,8,10,11,16,1,0,0,10,11,16,9,5,12,13,16,1,
-        12,13,16,2,
-                        6,14,13,1,0,2,10,12,15,4,7,3,11,16,8,9,5,
-                        11,9,1,6,4,13,14,16,2,0,3,5,10,12,15,7,8,
-                        5,13,1,14,15,10,9,4,2,8,6,11,7,0,12,16,
-                        10,7,0,1,11,16,3,9,8,12,14,15,4,6,5,2,13,7,11,1,0,9,5,12,14,15,16,
-        3,6,15,2,4,8,7,10,13,4,13,9,1,14,5,0,16,1,15,2,3,12,7,8,10,11}; // очередь обучения
+        int[] queue = {10,11,12,13,1,5,7,2,9,0,8,3,6,4,14,15,
+                        10,15,7,2,13,0,14,1,6,12,4,5,11,9,3,8,
+                        0,2,9,15,11,10,1,7,4,13,5,3,14,12,8,6,
+                        5,7,0,10,13,1,2,12,15,9,3,8,11,14,4,6,
+                        14,5,6,13,1,10,9,4,8,0,11,15,12,3,2,7,
+                        1,11,12,13,10,6,9,15,14,2,5,3,7,4,8,0,
+                        12,13,15,5,8,0,14,9,1,10,11,2,4,7,6,3,
+                        4,0,13,6,1,15,5,12,14,10,3,2,7,11,9,8,
+                        1,0,2,6,7,3,9,5,8,15,10,12,13,11,14,4,
+                        9,10,8,13,1,5,7,14,2,3,12,11,6,0,4,15}; // очередь обучения
         int epo = 1; // счетчик итераций
-        double[] err = new double [17]; // вычисление ошибки
+        double[] err = new double [16]; // вычисление ошибки
         //BufferedImage image;
         String lineSeparator = System.getProperty("line.separator");
-
+        double mse = 0;
         //image = ImageIO.read(Imagination.class.getResource("Base/"+im+".png"));
 
         do {
-            // символы:       0    1    2    3    4    5    6    7    8    9    А    И    Д    Т    р    .    -
-            // индекс:        0    1    2    3    4    5    6    7    8    9    10   11   12   13   14   15   16
-            double[] goal = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}; // целевой вектор
+            // символы:       0    1    2    3    4    5    6    7    8    9    А    И    Д    Т    .    -
+            // индекс:        0    1    2    3    4    5    6    7    8    9    10   11   12   13   14   15
+            double[] goal = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}; // целевой вектор
 
             preporation(image); // вычисление предварительных результатов нейросети
 
             // анализ выходного слоя обучателем
             int g = queue[im]; // задаем приоритет
             double te = 0;
-            for(int i = 0; i < goal.length; i++){
-                if(i == g){
+            for (int i = 0; i < goal.length; i++) {
+                if (i == g) {
                     goal[i] = 1; // задаем приоритет
                 }
-                err[i] = (goal[i] - result[i]) * 1; // вычисление ошибки
+                err[i] = (goal[i] - result[i]); // вычисление ошибки
 
-                for(int j = 0; j < 20; j++){
-                    te += weightMatrix3[i][j]*h2[j]; // сумма весов на входные значения для вычисления производной
+                for (int j = 0; j < 20; j++) {
+                    te += weightMatrix3[i][j] * h2[j]; // сумма весов на входные значения для вычисления производной
                 }
                 if(te < 0){ // производная для Relu
                     err[i] = err[i] * 0.1;
-                    //err[i] = 1 / (Math.cosh(te)*Math.cosh(te));
+                    //err[i] = derivative(te);
                     err[i] = Math.abs(err[i]); // модуль
                 }
                 te = 0;
@@ -406,45 +415,67 @@ public class NeuroNet {
             }
 
             int ne = 1;
-            for(int x = 0; x < 17; x++) { // перезапись файлов весов выходного слоя
-                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w3."+ne+" 20.txt"); // запись текста в файл
+            for (int x = 0; x < 16; x++) { // перезапись файлов весов выходного слоя
+                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w3." + ne + " 20.txt"); // запись текста в файл
                 for (int j = 0; j < 20; j++) { // запись данных в файлы_весов
                     double r = 0.01 * err[x] * h2[j];
                     r = weightMatrix3[x][j] + r;
-                    String format = new DecimalFormat("#.#####").format(r).replaceAll(",", ".");
+                    String format = new DecimalFormat("#.###").format(r).replaceAll(",", ".");
                     r = Double.parseDouble(format); // задаем кол-во знаков после запятой
                     //System.out.println("r="+r+" rand="+rand);
+                    /*if(r > 1 | r < -1) {
+                        if (r > 1) {
+                            r = 1;
+                        }
+                        if (r < -1) {
+                            r = -1;
+                        }
+                    }*/
+                    if(r > 1 | r < -1){
+                        //System.out.println("sloi3 = reWeight="+r+" err="+err[x]+" h="+h2[j]);
+                    }
                     fv.write(r + lineSeparator);
                 }
                 fv.close();
                 ne++;
             }
 
-            // анализ второг скрытого слоя
+            // анализ второго скрытого слоя
             double[] err2 = new double[20];
-            for(int x = 0; x < 20; x++) {
-                for (int j = 0; j < 17; j++) {
+            for (int x = 0; x < 20; x++) {
+                for (int j = 0; j < 16; j++) {
                     err2[x] += err[j] * weightMatrix3[j][x];
                 }
                 te = 0;
-                for(int i = 0; i < 20; i++){
-                    te += weightMatrix2[x][i]*h1[i];
+                for (int i = 0; i < 20; i++) {
+                    te += weightMatrix2[x][i] * h1[i];
                 }
                 if(te < 0){
                     err2[x] = err2[x] * 0.1;
-                    //err2[x] = 1 / (Math.cosh(te)*Math.cosh(te));
+                    //err2[x] = derivative(te);
                     err2[x] = Math.abs(err2[x]);
                 }
             }
             ne = 1;
-            for(int x = 0; x < 20; x++) { // перезапись файлов весов второго скрытого слоя
-                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w2."+ne+" 20.txt"); // запись текста в файл
+            for (int x = 0; x < 20; x++) { // перезапись файлов весов второго скрытого слоя
+                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w2." + ne + " 20.txt"); // запись текста в файл
                 for (int j = 0; j < 20; j++) { // запись данных в файлы_весов
                     double r = 0.1 * err2[x] * h1[j];
                     r = weightMatrix2[x][j] + r;
-                    String format = new DecimalFormat("#.#####").format(r).replaceAll(",", ".");
+                    String format = new DecimalFormat("#.###").format(r).replaceAll(",", ".");
                     r = Double.parseDouble(format);
                     //System.out.println("r="+r+" rand="+rand);
+                    /*if(r > 1 | r < -1){
+                        if(r > 1){
+                            r = 1;
+                        }
+                        if(r < -1){
+                            r = -1;
+                        }
+                    }*/
+                    if(r > 1 | r < -1){
+                        //System.out.println("sloi2 = reWeight="+r+" err="+err2[x]+" h="+h1[j]);
+                    }
                     fv.write(r + lineSeparator);
                 }
                 fv.close();
@@ -453,36 +484,51 @@ public class NeuroNet {
 
             // анализ первого скрытого слоя
             double[] err3 = new double[20];
-            for(int x = 0; x < 20; x++) {
+            for (int x = 0; x < 20; x++) {
                 for (int j = 0; j < 20; j++) {
                     err3[x] += err2[x] * weightMatrix2[x][j];
                 }
                 te = 0;
-                for(int i = 0; i < 1024; i++){
-                    te += weightMatrix1[x][i]*in[i];
+                for (int i = 0; i < 784; i++) {
+                    te += weightMatrix1[x][i] * in[i];
                 }
                 if(te < 0){
                     err3[x] = err3[x] * 0.1;
-                    //err3[x] = 1 / (Math.cosh(te)*Math.cosh(te));
+                    //err3[x] = derivative(te);
                     err3[x] = Math.abs(err3[x]);
                 }
             }
             ne = 1;
-            for(int x = 0; x < 20; x++) { // перезапись файлов весов первого скрытого слоя
-                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 1024.txt"); // запись текста в файл
-                for (int j = 0; j < 1024; j++) { // запись данных в файлы_весов
+            for (int x = 0; x < 20; x++) { // перезапись файлов весов первого скрытого слоя
+                FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1." + ne + " 784.txt"); // запись текста в файл
+                for (int j = 0; j < 784; j++) { // запись данных в файлы_весов
                     double r = 0.1 * err3[x] * in[j];
                     r = weightMatrix1[x][j] + r;
-                    String format = new DecimalFormat("#.#####").format(r).replaceAll(",", ".");
+                    String format = new DecimalFormat("#.###").format(r).replaceAll(",", ".");
                     r = Double.parseDouble(format);
                     //System.out.println("r="+r+" rand="+rand);
+                    /*if(r > 1 | r < -1){
+                        if(r > 1){
+                            r = 1;
+                        }
+                        if(r < -1){
+                            r = -1;
+                        }
+                    }*/
+                    if(r > 1 | r < -1){
+                        //System.out.println("sloi1 = reWeight="+r+" err="+err3[x]+" h="+in[j]);
+                    }
                     fv.write(r + lineSeparator);
                 }
                 fv.close();
                 ne++;
             }
             epo++;
+            //mse += err[g];
         } while (epo < 1000); // сделать 1000 итераций
+        /*System.out.println("\nMSE");
+        System.out.println("mse"+x+"=" + mse / 1000);
+        System.out.println();*/
         x++;
         im++;
     }

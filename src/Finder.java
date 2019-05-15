@@ -562,8 +562,8 @@ public class Finder extends Applet {
         }
         if(analyzerLetter){ // если изображение - символ, то передается в нейросеть
             //System.out.println("cycle="+sc);
-            neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
-            //neuronet.trainer(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В ОБУЧАТЕЛЬ
+            //neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
+            neuronet.trainer(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В ОБУЧАТЕЛЬ
 
         }
         //System.out.println(sc);
