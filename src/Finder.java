@@ -11,7 +11,7 @@ import java.util.List;
 public class Finder extends Applet {
 
     NeuroNet neuronet = new NeuroNet();
-    boolean isEmpty1 = true, isEmpty2 = true, isEmpty3 = true; // булеан для пустого массива, в который сохраняются строки текста
+    boolean isEmpty1 = true, isEmpty2 = true, isEmpty3 = true; // булеаны для пустого массива, в который сохраняются строки текста
     boolean whiteString = false; // нахождение конечной границы строки текста
     boolean itsSymbol = false;
     boolean analyzerString = false; // булеан для искателя строк
@@ -21,7 +21,7 @@ public class Finder extends Applet {
     int n = 0, nn = 0, nnn = 0; // временные переменные для создания новых изображений / для определения размеров полученного массива на выходе из каждого искателя
 
     // ИСКАТЕЛЬ СТРОК
-    public double[][] stringFind(double[][] pix, int height, int width) throws IOException { // искатель строк текста
+    public double[][] stringFind (double[][] pix, int height, int width) throws IOException { // искатель строк текста
         analyzerString = true; // включение искателя строк
         analyzerLetter = false;
         analyzerWord = false;
@@ -35,7 +35,8 @@ public class Finder extends Applet {
                     whiteString = false;
                     zoner(pix, height, width, i); // запись строки пикселей
                     break;
-                } else {
+                }
+                else {
                     whiteString = true;
                 }
             }
@@ -318,7 +319,7 @@ public class Finder extends Applet {
         int wu = (int) Math.round(t1);
         int wm = (int) Math.round(t2);
         int wl = height - wu - wm; // нижний - 30%
-        boolean bool1 = false, bool2 = false, bool3 = false; // булеаны для условий удаления последний лишних границ
+        boolean bool1 = false, bool2 = false, bool3 = false; // булеаны для каждого условия удаления последних лишних границ
         // максимальные среди средних значений яркости для каждого уровня (текущий столбец, следующий, предыдущий)
         double max1 = 0, max1n = 0, max1a = 0;
         double max2 = 0, max2n = 0, max2a = 0;
@@ -560,7 +561,7 @@ public class Finder extends Applet {
                 i++;
             }
         }
-        if(analyzerLetter){ // если изображение - символ, то передается в нейросеть
+        if (analyzerLetter){ // если изображение - символ, то передается в нейросеть
             //System.out.println("cycle="+sc);
             //neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
             neuronet.trainer(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В ОБУЧАТЕЛЬ
