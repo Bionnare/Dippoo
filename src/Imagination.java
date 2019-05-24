@@ -2,53 +2,51 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Scanner;
+
+// КООРДИНАТОР ПРОЕКТА
+// 1) здесь определяется путь к файлу изображения, который нужно оцифровать
+// 2) производится преобразование значений RGB изображения в относительное число-значение, определяющее яркость каждого пикселя
+// 3) отправка преобразованного изображения (в виде массива значений типа double) в сегментатор_текста
+// 4) после всех вычислений (то есть в конце работы программы) идет обращение к методу_получения оцифрованного текста (в виде строки)
+// 5) вывод результата (строки)
+// ДОПОЛНИТЕЛЬНО:
+// 6) генератор, заполняющий файлы весов случайными значениями (в диапозоне (-0.5; 0.5)): используется при переобучении (для удобства)
+// 7) возможность подать в нейросеть один единственный символ (для удобства)
+// 8) возможность подать в обучатель_нейросети один единственный символ (для удобства) - не использовался
 
 public class Imagination {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException { // запускает работу всего проекта
         Finder finder = new Finder();
         NeuroNet neuronet = new NeuroNet();
-        BufferedImage image = null;
+        BufferedImage image = null; // изображение для оцифровки
+        String string; // строка с результатом оцифровки
+        String path = "C:\\Users\\user\\Desktop\\Diplom-master\\Diplom-master\\src\\пр1.png"; // путь к файлу, который нужно оцифровать
+        File f = new File(path);
 
         try {
-            image = ImageIO.read(Imagination.class.getResource("Save/img151.png")); // загрузка изображения (src\___.png)
+            image = ImageIO.read(f); // загрузка изображения
         } catch (IOException e) {
             System.out.println("Error: " + e);
         }
 
-        //ImageIO.write(image, "PNG", new File("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/Безымянный.png")); // сохранение файла
-
         int width = image.getWidth(); // ширина изображения
         int height = image.getHeight(); // высота изображения
-        double[][] pixels = new double[height][width];
+        double[][] pixels = new double[height][width]; // массив для передачи значений в сегментатор
+
         for (int row = 0; row < height; row++) {
             //System.out.println();
             for (int col = 0; col < width; col++) {
-                Color mycolor = new Color(image.getRGB(col, row)); // перевод в RGB-значение
-                double r = 1 - (double) mycolor.getRed()/255;
-                double g = 1 - (double) mycolor.getGreen()/255;
-                double b = 1 - (double) mycolor.getBlue()/255;
+                Color rgb = new Color(image.getRGB(col, row)); // перевод в RGB-значение
+                double red = 1 - (double) rgb.getRed()/255;
+                double green = 1 - (double) rgb.getGreen()/255;
+                double blue = 1 - (double) rgb.getBlue()/255;
                 // вывод матрицы-значений изображения/255 (все оттенки цвета имеют одинаковое значение); диапазон (0,1);
                 // использование вычитания нужно, чтобы задать белый цвет как '0', а черный цвет - '1' (в RGB - значения противоположны)
 
-                // настройка яркости пикселей (пока не нужно)
-                /*if(((r >= 0.05 & r <= 0.8) & (g >= 0.05 & g <= 0.8) & (b >= 0.05 & b <= 0.8))){
-                    if ((r >= g - 0.3 & r <= g + 0.3) | (r >= b - 0.3 & r <= b + 0.3) | (g >= b - 0.3 & g <= b + 0.3) |
-                            (g >= r - 0.3 & g <= r + 0.3) | (b >= g - 0.3 & b <= g + 0.3) | (b >= r - 0.3 & b <= r + 0.3)) {
-                        //System.out.println("R=" + r + " G=" + g + " B=" + b);
-                        r=0.8;
-                        g=0.8;
-                        b=0.8;
-                    }
-                }*/
-
-                //pixels[row][col] = r; // использование одного цвета
-                pixels[row][col] = (r + g + b) / 3; // использование трех цветов
+                pixels[row][col] = (red + green + blue) / 3; // получение среднего значения от всех оттенков цвета RGB
                 pixels[row][col] = Math.round(pixels[row][col]*100)/100.0; // преобразование числа до сотых после запятой
-                //System.out.print(pixels[row][col] + " ");
+                //System.out.print(pixels[row][col] + " "); // вывод массива для передачи значений в сегментатор
             }
         }
 
@@ -69,9 +67,13 @@ public class Imagination {
             ne++;
         }*/
 
-        //finder.stringFind(pixels,height,width); // основной метод запуска нейросети
-        neuronet.preporation(image); // метод проверки нейросети одним символом
-        //neuronet.trainer(image); // основной метод обучение нейросети
+        finder.stringFind(pixels, height, width); // основной метод запуска нейросети
+        //neuronet.preporation(image); // метод проверки нейросети одним символом
+        //neuronet.trainer(image); // метод обучение нейросети одним символом
+
+        string = neuronet.getString(); // получение результата оцифровывания
+        System.out.println();
+        System.out.print(string); // его вывод
     }
 }
 

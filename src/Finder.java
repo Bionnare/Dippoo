@@ -1,65 +1,73 @@
-import javax.imageio.ImageIO;
 import java.applet.Applet;
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Finder extends Applet {
+// СЕГМЕНТАТОР_ТЕКСТА
+// 1) получение искателем_строк массива значений для оцифровывания
+// 2) с помощью метода границ искатель_строк делит массив значений изображения на "строки", которые определяют реальные строки текста с изображения
+// 3) передача 'строки' в искатель_слов, а после передача в составитель_текста значения '999', определяющее '\n' (новую строку)
+// 4) искатель_слов через сравнивание среднего значения яркости каждого столбца полученной 'строки' с общим средним значением яркости 'строки' делит массив на 'слова', определяющие реальные слова текста с изображения
+// 5) передача 'слова' в искатель_символов, а после передача в составитель_текста значения '666', определяющее ' ' (пробел между словами)
+// 6) искатель_символов, используя три этапа определения настоящих границ каждого символа, получает 'символы', определяющие реальные символы текста с изображения
+// 7) отправка массива значений 'символа' в метод_создания_изображения
+// 8) создается новое изображения символа
+// 9) передача этого изображения в нейросеть
+// ДОПОЛНИТЕЛЬНО:
+// 10) выгрузка строк в папку "Save", полученных в искателе_строк, в виде изображений (для проверки)
+// 11) выгрузка слов в папку "Save", полученных в искателе_слов, в виде изображений (для проверки)
+// 12) выгрузка символов в папку "Save", полученных в искателе_символов, в виде изображений (для проверки)
+// 13) возможность сегментатора отправлять полученные изображения вместо нейросети в обучатель_нейросети
 
+public class Finder extends Applet {
     NeuroNet neuronet = new NeuroNet();
-    boolean isEmpty1 = true, isEmpty2 = true, isEmpty3 = true; // булеаны для пустого массива, в который сохраняются строки текста
-    boolean whiteString = false; // нахождение конечной границы строки текста
-    boolean itsSymbol = false;
-    boolean analyzerString = false; // булеан для искателя строк
-    boolean analyzerWord = false; // булеан для искателя слов
-    boolean analyzerLetter = false; // булеан для искателя символов
+    boolean isEmpty1 = true, isEmpty2 = true, isEmpty3 = true; // булеаны для пустых массивов, в которые сохраняются строки текста (нужны как условие записи искателями полученных ими значений)
+    boolean whiteString = false; // нахождение конечной границы строки текста (нужны как условие записи искателями, полученных ими, значений)
+    boolean analyzerString = false; // флаг работы искателя_строк (нужен для записи значений, полученных им)
+    boolean analyzerWord = false; // флаг работы искателя_слов (нужен для записи значений, полученных им)
+    boolean analyzerLetter = false; // флаг работы искателя_символов (нужен для записи значений, полученных им)
     double pict[][]; // временный массив
-    int n = 0, nn = 0, nnn = 0; // временные переменные для создания новых изображений / для определения размеров полученного массива на выходе из каждого искателя
+    int n = 0, nn = 0, nnn = 0; // временные переменные для создания новых изображений (для определения размеров полученного массива на выходе из каждого искателя)
 
     // ИСКАТЕЛЬ СТРОК
-    public double[][] stringFind (double[][] pix, int height, int width) throws IOException { // искатель строк текста
-        analyzerString = true; // включение искателя строк
+    public double[][] stringFind (double[][] pix, int height, int width) throws IOException {
+        // включение искателя строк
+        analyzerString = true;
         analyzerLetter = false;
         analyzerWord = false;
+
         pict = new double[height][width]; // идентифицируем размеры временного массива
 
         for (int i = 0; i < height; i++) {
-            //System.out.println();
             for (int j = 0; j < width; j++) {
-                //System.out.print(pix[i][j] + " ");
-                if (pix[i][j] >= 0.5) { // порог черного пикселя / находим стартовую границу строки текста
+                if (pix[i][j] >= 0.5) { // порог черного пикселя (находим стартовую границу строки текста)
                     whiteString = false;
-                    zoner(pix, height, width, i); // запись строки пикселей
+                    zoner(pix, height, width, i); // запись одной строки пикселей
                     break;
                 }
-                else {
+                else { // белый символ
                     whiteString = true;
                 }
             }
             if ((!isEmpty1 & whiteString) | (!isEmpty1 & i == height - 1)) { // находим конечную границу строки текста
-                //System.out.println("\n\nЗаход строки!!!" + n + " из " + height);
-                double newPict[][] = new double[n][width];
+                double newPict[][] = new double[n][width]; // идентификация массива для полученной строки
+
                 for (int q = 0; q < n; q++) {
-                    //System.out.println();
                     for (int w = 0; w < width; w++) {
-                        newPict[q][w] = pict[q][w];
-                        //System.out.print(newPict[q][w] + " ");
+                        newPict[q][w] = pict[q][w]; // перезапись в новый массив
                     }
                 }
 
-                //crimg(newPict, n, width); // ВЫГРУЗКА СТРОК КАК ИЗОБРАЖЕНИЙ
-                wordFind(newPict, n, width); // ПЕРЕДАЧА МАССИВА В ИСКАТЕЛЬ СЛОВ
+                //crimg(newPict, n, width); // выгрузка строк как изображений
+                wordFind(newPict, n, width); // передача массива в искатель_слов
 
-                // ЗДЕСЬ ДОЛЖНА БЫТЬ ПЕРЕДАЧА ИНФОРМАЦИИ О НОВОЙ СТРОКЕ В СОСТАВИТЕЛЬ_ЭЛЕКТРОННОГО_ТЕКСТА
+                neuronet.textFormer(999); // передача в составитель_текста информации о присутствии '\n'
 
-                // устанавливаем значения по умолчанию
+                // устанавливаем значений по умолчанию
                 isEmpty1 = true;
                 whiteString = false;
-                itsSymbol = false;
                 analyzerString = true;
                 analyzerLetter = false;
                 analyzerWord = false;
@@ -71,127 +79,129 @@ public class Finder extends Applet {
     }
 
     // ИСКАТЕЛЬ СЛОВ
-    public double[][] wordFind(double[][] pix, int height, int width) throws IOException { // искатель слов
-        double[][] worders = new double[height][width];
+    public double[][] wordFind(double[][] pix, int height, int width) throws IOException {
+        double[][] blur = new double[height][width]; // массив для хранения размытого изображения
 
         for (int i = 0; i < height; i++) { // размытие изображения (все соседние пиксели у черного пикселя устанавливаются как '1')
             for (int j = 0; j < width; j++) {
                 if (pix[i][j] > 0.5) {
                     if (i != 0 & j != 0 & i != height - 1 & j != width - 1 & i != 1 & j != 1 & i != height - 2 & j != width - 2) {
-                        worders[i][j] = 1;
-                        worders[i + 1][j] = 1;
-                        worders[i][j + 1] = 1;
-                        worders[i - 1][j] = 1;
-                        worders[i][j - 1] = 1;
-                        worders[i + 1][j + 1] = 1;
-                        worders[i - 1][j - 1] = 1;
-                        worders[i + 1][j - 1] = 1;
-                        worders[i - 1][j + 1] = 1;
+                        blur[i][j] = 1;
+                        blur[i + 1][j] = 1;
+                        blur[i][j + 1] = 1;
+                        blur[i - 1][j] = 1;
+                        blur[i][j - 1] = 1;
+                        blur[i + 1][j + 1] = 1;
+                        blur[i - 1][j - 1] = 1;
+                        blur[i + 1][j - 1] = 1;
+                        blur[i - 1][j + 1] = 1;
 
-                        worders[i][j + 2] = 1;
-                        worders[i][j - 2] = 1;
-                        worders[i + 2][j] = 1;
-                        worders[i + 2][j + 1] = 1;
-                        worders[i + 2][j + 2] = 1;
-                        worders[i + 2][j - 1] = 1;
-                        worders[i + 2][j - 2] = 1;
-                        worders[i + 1][j + 2] = 1;
-                        worders[i + 1][j - 2] = 1;
-                        worders[i - 2][j] = 1;
-                        worders[i - 2][j + 1] = 1;
-                        worders[i - 2][j + 2] = 1;
-                        worders[i - 2][j - 1] = 1;
-                        worders[i - 2][j - 2] = 1;
-                        worders[i - 1][j + 2] = 1;
-                        worders[i - 1][j - 2] = 1;
+                        blur[i][j + 2] = 1;
+                        blur[i][j - 2] = 1;
+                        blur[i + 2][j] = 1;
+                        blur[i + 2][j + 1] = 1;
+                        blur[i + 2][j + 2] = 1;
+                        blur[i + 2][j - 1] = 1;
+                        blur[i + 2][j - 2] = 1;
+                        blur[i + 1][j + 2] = 1;
+                        blur[i + 1][j - 2] = 1;
+                        blur[i - 2][j] = 1;
+                        blur[i - 2][j + 1] = 1;
+                        blur[i - 2][j + 2] = 1;
+                        blur[i - 2][j - 1] = 1;
+                        blur[i - 2][j - 2] = 1;
+                        blur[i - 1][j + 2] = 1;
+                        blur[i - 1][j - 2] = 1;
 
                     }
                     // условия приграничных пикселей
                     if (i == 0) {
-                        worders[i][j] = 1;
-                        worders[i + 1][j] = 1;
+                        blur[i][j] = 1;
+                        blur[i + 1][j] = 1;
                         if (j != 0) {
-                            worders[i][j - 1] = 1;
-                            worders[i + 1][j - 1] = 1;
+                            blur[i][j - 1] = 1;
+                            blur[i + 1][j - 1] = 1;
                         }
                         if (j != width - 1) {
-                            worders[i][j + 1] = 1;
-                            worders[i + 1][j + 1] = 1;
+                            blur[i][j + 1] = 1;
+                            blur[i + 1][j + 1] = 1;
                         }
                     }
 
                     if (i == height - 1) {
-                        worders[i][j] = 1;
-                        worders[i - 1][j] = 1;
+                        blur[i][j] = 1;
+                        blur[i - 1][j] = 1;
                         if (j != 0) {
-                            worders[i][j - 1] = 1;
-                            worders[i - 1][j - 1] = 1;
+                            blur[i][j - 1] = 1;
+                            blur[i - 1][j - 1] = 1;
                         }
                         if (j != width - 1) {
-                            worders[i][j + 1] = 1;
-                            worders[i - 1][j + 1] = 1;
+                            blur[i][j + 1] = 1;
+                            blur[i - 1][j + 1] = 1;
                         }
                     }
 
                     if (j == 0) {
-                        worders[i][j] = 1;
-                        worders[i][j + 1] = 1;
+                        blur[i][j] = 1;
+                        blur[i][j + 1] = 1;
                     }
                     if (j == width - 1) {
-                        worders[i][j] = 1;
-                        worders[i][j - 1] = 1;
+                        blur[i][j] = 1;
+                        blur[i][j - 1] = 1;
                     }
                 } else { // белые - в '0'
-                    worders[i][j] = 0;
+                    blur[i][j] = 0;
                 }
             }
         }
 
+        int sumCol = 0; // сумма пикселей в одном столбце
+        double avrCol; // среднее значение пикселей в столбце
+        double[] avrArr = new double[width]; // массив средних значений каждого столбца одной строки
+
         // находим средние значения яркости пикселей для каждого столбца в строке
-        int temp = 0; // сумма пикселей в одном столбце
-        double avg = 0; // среднее значение пикселей в столбце
-        double[] arravg = new double[width]; // массив средних значений каждого столбца одной строки
         for (int q = 0; q < width; q++) {
             for (int w = 0; w < height; w++) {
-                temp += worders[w][q];
+                sumCol += blur[w][q];
             }
-            avg = (double) temp / height;
-            avg = Math.round(avg * 100) / 100.0;
-            arravg[q] = avg;
-            //System.out.println("Средняя яркость строк" + arravg[q]);
-            temp = 0;
+            avrCol = (double) sumCol / height;
+            avrCol = Math.round(avrCol * 100) / 100.0;
+            avrArr[q] = avrCol;
+            sumCol = 0;
         }
 
-        // находим среднее значение яркости пикселей для всей строки
-        double average = 0; // средний порог значений пикселей для полной одной строки
-        double t = 0;
-        for (int e = 0; e < arravg.length; e++) {
-            t += arravg[e];
+        double average; // средний порог значений пикселей для полной одной строки
+        sumCol = 0;
+
+        // находим среднее значение яркости пикселей для всей строки, которое будет являться порогом для средних значений каждого столбца
+        for (int e = 0; e < avrArr.length; e++) {
+            sumCol += avrArr[e];
         }
-        average = t / arravg.length;
+        average = sumCol / avrArr.length;
         average = Math.round(average * 100) / 100.0;
-        //System.out.println("Средняя яркость строк" + average);
+
+        int[] binaryZone = new int[avrArr.length]; // здесь храниятся индексы столбцов строки
 
         // сравниваем все полученные ранее значения яркости для каждого столбца со средним порогом яркости для всей строки
-        int[] zhe = new int[arravg.length];
-        for (int a = 0; a < arravg.length; a++) {
-            if (arravg[a] >= average * 0.1) {
-                zhe[a] = 1;
-                //System.out.println("гран=" + zhe[a] + " size=" + a);
+        for (int a = 0; a < avrArr.length; a++) {
+            if (avrArr[a] >= average * 0.1) {
+                binaryZone[a] = 1; // устанавливаем в '1', где находится слово
             } else {
-                zhe[a] = 0;
-                //System.out.println("гран=" + zhe[a] + " size=" + a);
+                binaryZone[a] = 0;
             }
         }
 
-        // запись нового изображения
-        analyzerString = false; // включение искателя слов
+        // включение искателя слов
+        analyzerString = false;
         analyzerWord = true;
         analyzerLetter = false;
+
         pict = new double[height][width]; // идентифицируем размеры временного массива
+
+        // запись нового изображения
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                if (zhe[i] == 1) { // исходя из полученных данных предыдущих вычислений записываем пиксели в новый массив
+                if (binaryZone[i] == 1) { // исходя из полученных данных предыдущих вычислений, записываем пиксели в новый массив
                     whiteString = false;
                     zoner(pix, height, width, i);
                     break;
@@ -199,109 +209,97 @@ public class Finder extends Applet {
                     whiteString = true;
                 }
             }
-            if ((!isEmpty3 & whiteString) | (!isEmpty3 & i == width - 1)) { // находим конечную границу слова
-                //System.out.println("\n\nЗаход строки!!!" + nnn + " из " + width);
-                double newPict[][] = new double[height][nnn];
+            if ((!isEmpty2 & whiteString) | (!isEmpty2 & i == width - 1)) { // находим конечную границу слова
+                double newPict[][] = new double[height][nn]; // идентификация массива для нового слова
+
                 for (int q = 0; q < height; q++) {
-                    //System.out.println();
-                    for (int w = 0; w < nnn; w++) {
-                        newPict[q][w] = pict[q][w];
-                        //System.out.print(newPict[q][w] + " ");
+                    for (int w = 0; w < nn; w++) {
+                        newPict[q][w] = pict[q][w]; // перезапись слова
                     }
                 }
-                //crimg(newPict, height, nnn); // ВЫГРУЗКА СЛОВ КАК ИЗОБРАЖЕНИЙ
-                letterFind(newPict, height, nnn); // ПЕРЕДАЧА МАССИВА В ИСКАТЕЛЬ СИМВОЛОВ
 
-                // ЗДЕСЬ ДОЛЖНА БЫТЬ ПЕРЕДАЧА ИНФОРМАЦИИ О НОВОМ СЛОВЕ В СОСТАВИТЕЛЬ_ЭЛЕКТРОННОГО_ТЕКСТА
+                //crimg(newPict, height, nnn); // выгрузка слов как изображений
+                letterFind(newPict, height, nn); // передача слова в искатель_символов
+
+                neuronet.textFormer(666); // передача в составитель_текста информации о присутствии ' '
 
                 // устанавливаем значения по умолчанию
-                isEmpty3 = true;
+                isEmpty2 = true;
                 whiteString = false;
-                itsSymbol = false;
                 analyzerString = false;
                 analyzerWord = true;
                 analyzerLetter = false;
-                nnn = 0;
+                nn = 0;
                 pict = new double[height][width];
             }
         }
-
         return pix;
     }
 
     // ИСКАТЕЛЬ СИМВОЛОВ
     public double[][] letterFind(double[][] pix, int height, int width) throws IOException {
-        double tp = 0.3 * height; // примерная ширина символа
-        int interval = (int) Math.round(tp);
+        double t = 0.3 * height;
+        int interval = (int) Math.round(t); // примерная ширина символа
+
+        int sumCol = 0; // сумма пикселей в одном столбце
+        double avrCol; // среднее значение пикселей в столбце
+        double[] avrArr = new double[width]; // массив средних значений каждого столбца одного слова
 
         // находим средние значения яркости пикселей для каждого столбца в слове
-        int temp = 0; // сумма пикселей в одном столбце
-        double avg = 0; // среднее значение пикселей в столбце
-        double[] arravg = new double[width]; // массив средних значений каждого столбца одного слова
         for (int q = 0; q < width; q++) {
             for (int w = 0; w < height; w++) {
-                temp += pix[w][q];
+                sumCol += pix[w][q];
             }
-            avg = (double) temp / height;
-            avg = Math.round(avg * 100) / 100.0;
-            arravg[q] = avg;
-            //System.out.println("Средняя яркость строк=" + arravg[q]);
-            temp = 0;
+            avrCol = (double) sumCol / height;
+            avrCol = Math.round(avrCol * 100) / 100.0;
+            avrArr[q] = avrCol;
+            sumCol = 0;
         }
+
+        double average; // средний порог значений пикселей для полного одного слова
+        sumCol = 0;
 
         // находим среднее значение яркости пикселей для всего слова
-        double average = 0; // средний порог значений пикселей для полного одного слова
-        double t = 0;
-        for (int e = 0; e < arravg.length; e++) {
-            t += arravg[e];
+        for (int e = 0; e < avrArr.length; e++) {
+            sumCol += avrArr[e];
         }
-        average = t / arravg.length;
+        average = sumCol / avrArr.length;
         average = Math.round(average * 100) / 100.0;
         average = average * 0.1;
-        //System.out.println("Средняя яркость " + average);
 
-        //System.out.println("Интервал=" + interval);
         List<Integer> gran = new ArrayList<>(); // список межсимвольных границ
-        double min = arravg[0]; // переменная минимума для нахождения межсимвольных границ
+        double min = avrArr[0]; // переменная минимума для нахождения межсимвольных границ
         int index = 0; // индекс найденных минимумов
-        int s = 0;
-        // находим минимальное среднее значение столбца на отрезке (0, interval)
+        int s = 0; // переменная для сдвига
+
+        // находим минимальное среднее (min) значение столбца на отрезке (0, interval)
         // далее находим на отрезке от (min+1, interval+1)
         // и так далее до конечной границы слова
         // таким образом получаем группу предварительных межсимвольных границ
-        while (interval + s < arravg.length) {
-            //System.out.println("s=" + s + " length=" + (interval+s));
+        while (interval + s < avrArr.length) {
             for (int q = s; q < interval + s; q++) {
-                //System.out.println("arravg=" + arravg[q]);
-                if (arravg[q] < min) {
-                    min = arravg[q];
+                if (avrArr[q] < min) {
+                    min = avrArr[q];
                     index = q;
-                    //System.out.println("Минимум=" + min);
-
                 }
             }
             gran.add(index);
             s = index + 1;
             index = s;
-            min = arravg[s];
+            min = avrArr[s];
         }
-        //System.out.println("Минимум=" + min);
-        for (int q = s; q < arravg.length; q++) { // этот цикл нужен для прохода последнего отрезка
-            //System.out.println("arravg=" + arravg[q]);
-            if (arravg[q] < min) {
-                min = arravg[q];
+        for (int q = s; q < avrArr.length; q++) { // этот цикл нужен для прохода последнего отрезка
+            if (avrArr[q] < min) {
+                min = avrArr[q];
                 index = q;
-                //System.out.println("Минимум=" + min);
-
             }
         }
         gran.add(index);
-        //System.out.println("List1=" + gran);
 
         // первый шаг удаления лишних границ
         for (int q = 2; q < gran.size() - 2; q++) {
-            int mn = gran.get(q);
-            if ((arravg[mn] < average) & ((arravg[mn - 2] > average) | (arravg[mn + 2] > average))) {
+            int m = gran.get(q);
+            if ((avrArr[m] < average) & ((avrArr[m - 2] > average) | (avrArr[m + 2] > average))) { // условие ложной границы
                 Iterator<Integer> iter = gran.iterator();
                 while (iter.hasNext()) {
                     Integer next = iter.next();
@@ -311,108 +309,111 @@ public class Finder extends Applet {
                 }
             }
         }
-        //System.out.println("List2=" + gran);
 
         // делим изображение слова на три уровня
-        double t1 = 0.3 * height; // верхний - 30% от высоты
-        double t2 = 0.4 * height; // средний - 40%
-        int wu = (int) Math.round(t1);
-        int wm = (int) Math.round(t2);
-        int wl = height - wu - wm; // нижний - 30%
-        boolean bool1 = false, bool2 = false, bool3 = false; // булеаны для каждого условия удаления последних лишних границ
+        t = 0.3 * height;
+        int upp = (int) Math.round(t); // верхний - 30% от высоты
+        t = 0.4 * height;
+        int mid = (int) Math.round(t); // средний - 40%
+        int low = height - upp - mid; // нижний - 30%
+        boolean bool1 = false, bool2 = false, bool3 = false; // булеаны для каждого условия удаления последних ложных межсимвольных границ
+
         // максимальные среди средних значений яркости для каждого уровня (текущий столбец, следующий, предыдущий)
-        double max1 = 0, max1n = 0, max1a = 0;
-        double max2 = 0, max2n = 0, max2a = 0;
-        double max3 = 0, max3n = 0, max3a = 0;
+        double maxU = 0, maxU_next = 0, maxU_prev = 0;
+        double maxM = 0, maxM_next = 0, maxM_prev = 0;
+        double maxL = 0, maxL_next = 0, maxL_prev = 0;
 
         // следующий шаг удаления лишних границ
         for (int q = 1; q < width - 1; q++) {
-            for (int w = 0; w < height; w++) { // находим максимальные значения для каждого столбца и соседних ему
-                if (w <= wu) { // на каждом уровне
-                    if (max1 < pix[w][q]) {
-                        max1 = pix[w][q];
+            for (int w = 0; w < height; w++) { // находим максимальные значения для каждого столбца и соседних ему на каждом уровне
+                if (w <= upp) {
+                    if (maxU < pix[w][q]) {
+                        maxU = pix[w][q];
 
                     }
-                    if (max1n < pix[w][q + 1]) {
-                        max1n = pix[w][q + 1];
+                    if (maxU_next < pix[w][q + 1]) {
+                        maxU_next = pix[w][q + 1];
 
                     }
-                    if (max1a < pix[w][q - 1]) {
-                        max1a = pix[w][q - 1];
-
-                    }
-                    //System.out.println("w=" + w + " wu=" + wu + " max=" + max1 + " max1n=" + max1n + " max1a=" +max1a + " q=" + q);
-                }
-                if ((w > wu) & (w < wl)) {
-                    if (max2 < pix[w][q]) {
-                        max2 = pix[w][q];
-
-                    }
-                    if (max2n < pix[w][q + 1]) {
-                        max2n = pix[w][q + 1];
-
-                    }
-                    if (max2a < pix[w][q - 1]) {
-                        max2a = pix[w][q - 1];
+                    if (maxU_prev < pix[w][q - 1]) {
+                        maxU_prev = pix[w][q - 1];
 
                     }
                 }
-                if (w >= wu) {
-                    if (max3 < pix[w][q]) {
-                        max3 = pix[w][q];
+                if ((w > upp) & (w < low)) {
+                    if (maxM < pix[w][q]) {
+                        maxM = pix[w][q];
 
                     }
-                    if (max3n < pix[w][q + 1]) {
-                        max3n = pix[w][q + 1];
+                    if (maxM_next < pix[w][q + 1]) {
+                        maxM_next = pix[w][q + 1];
 
                     }
-                    if (max3a < pix[w][q - 1]) {
-                        max3a = pix[w][q - 1];
+                    if (maxM_prev < pix[w][q - 1]) {
+                        maxM_prev = pix[w][q - 1];
+
+                    }
+                }
+                if (w >= low) {
+                    if (maxL < pix[w][q]) {
+                        maxL = pix[w][q];
+
+                    }
+                    if (maxL_next < pix[w][q + 1]) {
+                        maxL_next = pix[w][q + 1];
+
+                    }
+                    if (maxL_prev < pix[w][q - 1]) {
+                        maxL_prev = pix[w][q - 1];
 
                     }
                 }
 
             }
-            if ((max1 == max1n) | (max2 == max2n) | (max3 == max3n) | (max1 == max1a) | (max2 == max2a) | (max3 == max3a)) {
+            if ((maxU == maxU_next) | (maxM == maxM_next) | (maxL == maxL_next) | (maxU == maxU_prev) | (maxM == maxM_prev) | (maxL == maxL_prev)) {
                 bool1 = true; // если есть последовательные черные символы, то это ложная граница
             }
+
             // нахождения максимума для полных соседних столбцов
-            if (max1n > max2n & max1n > max3n) {
-                max1n = max1n;
+            if (maxU_next > maxM_next & maxU_next > maxL_next) {
+                maxU_next = maxU_next;
             }
-            if (max3n > max2n & max1n < max3n) {
-                max1n = max3n;
+            if (maxL_next > maxM_next & maxU_next < maxL_next) {
+                maxU_next = maxL_next;
             }
-            if (max1n < max2n & max2n > max3n) {
-                max1n = max2n;
+            if (maxU_next < maxM_next & maxM_next > maxL_next) {
+                maxU_next = maxM_next;
             }
-            if (max1a > max2a & max1a > max3a) {
-                max1a = max1a;
+            if (maxU_prev > maxM_prev & maxU_prev > maxL_prev) {
+                maxU_prev = maxU_prev;
             }
-            if (max3a > max2a & max1a < max3a) {
-                max1a = max3a;
+            if (maxL_prev > maxM_prev & maxU_prev < maxL_prev) {
+                maxU_prev = maxL_prev;
             }
-            if (max1a < max2a & max2a > max3a) {
-                max1a = max2a;
+            if (maxU_prev < maxM_prev & maxM_prev > maxL_prev) {
+                maxU_prev = maxM_prev;
             }
+
             // если среднее значение текущего столбца меньше максимального соседних, то это ложная граница
-            if ((arravg[q] < max1n) & (arravg[q] < max1a)) {
+            if ((avrArr[q] < maxU_next) & (avrArr[q] < maxU_prev)) {
                 bool2 = true;
             }
+
             // нахождение максимума для текущего полного столбца
-            if (max1 > max2 & max1 > max3) {
-                max1 = max1;
+            if (maxU > maxM & maxU > maxL) {
+                maxU = maxU;
             }
-            if (max3 > max2 & max1 < max3) {
-                max1 = max3;
+            if (maxL > maxM & maxU < maxL) {
+                maxU = maxL;
             }
-            if (max1 < max2 & max2 > max3) {
-                max1 = max2;
+            if (maxU < maxM & maxM > maxL) {
+                maxU = maxM;
             }
+
             // третье условие для ложных границ
-            double m = 2 * Math.abs(max1 - max1n);
-            double ma = 2 * Math.abs(max1 - max1a);
-            if ((max1 > m) & (max1 > ma)) {
+            double a_next = 2 * Math.abs(maxU - maxU_next);
+            double a_prev = 2 * Math.abs(maxU - maxU_prev);
+            if ((maxU > a_next) & (maxU > a_prev)) {
                 bool3 = true;
             }
 
@@ -426,126 +427,117 @@ public class Finder extends Applet {
                     }
                 }
             }
+
             // обнуляем переменные
             bool1 = false;
             bool2 = false;
             bool3 = false;
-            max1 = 0;
-            max1n = 0;
-            max1a = 0;
-            max2 = 0;
-            max2n = 0;
-            max2a = 0;
-            max3 = 0;
-            max3n = 0;
-            max3a = 0;
+            maxU = 0;
+            maxU_next = 0;
+            maxU_prev = 0;
+            maxM = 0;
+            maxM_next = 0;
+            maxM_prev = 0;
+            maxL = 0;
+            maxL_next = 0;
+            maxL_prev = 0;
         }
-        //System.out.println("List3=" + gran);
 
         // записываем в массив финальную группу межсимвольных границ
-        double porog = 0.4 * height;
-        int count = 0;
-        int[] zhe = new int[arravg.length];
-        for (int a = 0; a < arravg.length; a++) {
-            if (gran.contains(a) & (count > porog)) { // границы не должны быть слишком близко
-                zhe[a] = 0;
+        double power = 0.4 * height; // минимальное расстояние между границами
+        int count = 0; // счетчик расстояний между границами
+        int[] binaryZone = new int[avrArr.length]; // здесь хранятся индексы столбцов слова
+
+        for (int a = 0; a < avrArr.length; a++) {
+            if (gran.contains(a) & (count > power)) { // границы не должны быть слишком близко
+                binaryZone[a] = 0;
                 count = 0;
-                //System.out.println("гран=" + zhe[a] + " size=" + a);
-            } else {
-                zhe[a] = 1;
+            }
+            else {
+                binaryZone[a] = 1;
                 count++;
-                //System.out.println("гран=" + zhe[a] + " size=" + a);
             }
         }
 
-        // запись нового изображения
-        analyzerString = false; // включение искателя символов
+        // включение искателя символов
+        analyzerString = false;
         analyzerWord = false;
         analyzerLetter = true;
         pict = new double[height][width]; // идентифицируем размеры временного массива
+
+        // запись нового изображения
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                if (zhe[i] == 1) { // исходя из полученных данных предыдущих вычислений записываем пиксели в новый массив
+                if (binaryZone[i] == 1) { // исходя из полученных данных предыдущих вычислений записываем пиксели в новый массив
                     whiteString = false;
                     zoner(pix, height, width, i);
                     break;
-                } else {
+                }
+                else {
                     whiteString = true;
                 }
             }
-            if ((!isEmpty2 & whiteString) | (!isEmpty2 & i == width - 1)) { // записываем конечную границу символа
-                //System.out.println("\n\nЗаход строки!!!" + nn + " из " + width);
-                double newPict[][] = new double[height][nn];
+            if ((!isEmpty3 & whiteString) | (!isEmpty3 & i == width - 1)) { // записываем конечную границу символа
+                double newPict[][] = new double[height][nnn]; // идентификация массива для нового символа
+
                 for (int q = 0; q < height; q++) {
-                    //System.out.println();
-                    for (int w = 0; w < nn; w++) {
-                        newPict[q][w] = pict[q][w];
-                        //System.out.print(newPict[q][w] + " ");
+                    for (int w = 0; w < nnn; w++) {
+                        newPict[q][w] = pict[q][w]; // перезапись символа
                     }
                 }
-                if (nn > 3) { // используем массивы с шириной больше '3'
-                    itsSymbol = true;
-                    crimg(newPict, height, nn); // ВЫГРУЗКА СИМВОЛОВ КАК ИЗОБРАЖЕНИЙ
+                if (nnn > 3) { // используем массивы с шириной больше '3'
+                    crimg(newPict, height, nnn); // создание изображения символа
                 }
 
                 // устанавливаем значения по умолчанию
-                isEmpty2 = true;
+                isEmpty3 = true;
                 whiteString = false;
-                itsSymbol = false;
                 analyzerString = false;
                 analyzerWord = false;
                 analyzerLetter = true;
-                nn = 0;
+                nnn = 0;
                 pict = new double[height][width];
             }
         }
         return pix;
     }
 
-
     // производит запись строк пикселей во временый массив pict[][] для каждого искателя
     public void zoner(double[][] pix, int height, int width, int i) {
-        //System.out.println("\nЗаписываемые строки n="+n);
+
         if (analyzerString) { // для искателя строк
             for (int j = 0; j < width; j++) {
                 pict[n][j] = pix[i][j];
-                //System.out.print(pix[i][j] + " ");
             }
-            isEmpty1 = false;
+            isEmpty1 = false; // теперь массив не пустой
             n++;
         }
-        //System.out.println("\nЗаписываемые строки n="+nnn);
         if (analyzerWord) { // для искателя слов
             for (int j = 0; j < height; j++) {
-                pict[j][nnn] = pix[j][i];
-                //System.out.print(pix[j][i] + " ");
-            }
-            nnn++;
-            isEmpty3 = false;
-        }
-        //System.out.println("\nЗаписываемые строки n="+nn);
-        if (analyzerLetter) { // для искателя символов
-            for (int j = 0; j < height; j++) {
                 pict[j][nn] = pix[j][i];
-                //System.out.print(pix[j][i] + " ");
             }
             nn++;
-            isEmpty2 = false;
+            isEmpty2 = false; // теперь массив не пустой
+        }
+        if (analyzerLetter) { // для искателя символов
+            for (int j = 0; j < height; j++) {
+                pict[j][nnn] = pix[j][i];
+            }
+            nnn++;
+            isEmpty3 = false; // теперь массив не пустой
         }
     }
 
     int sc = 1; // счетчик файлов
-    int xx = 1; // переменная для принта
 
-    // преобразование полученных массивов из каждого искателя в изображение
+    // преобразование полученного массива из искателя_символов в изображение и отправка его в нейросеть
     public void crimg(double[][] pixels, int n, int w) throws IOException {
-        //System.out.println("\n\nВысота при создании изображения = "+ n + " Ширина = " + w + " счетчик=" + xx++);
         BufferedImage img = new BufferedImage(w, n, BufferedImage.TYPE_INT_RGB);
-        String string = "C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/img" + sc + ".png";
-        File f = new File(string);
+
+        //String string = "C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/img" + sc + ".png";
+        //File f = new File(string);
 
         int im[] = new int[n * w]; // массив со значениями пикселей, на основе которого будет создаваться изображение
-
         int i = 0;
 
         for (int y = 0; y < n; y++) { // заполнение массива
@@ -562,13 +554,12 @@ public class Finder extends Applet {
             }
         }
         if (analyzerLetter){ // если изображение - символ, то передается в нейросеть
-            //System.out.println("cycle="+sc);
-            //neuronet.preporation(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В НЕЙРОСЕТЬ
-            neuronet.trainer(img); // ПЕРЕДАЧА МАССИВА ПИКСЕЛЕЙ В ОБУЧАТЕЛЬ
-
+            neuronet.preporation(img); // передача изображения в нейросеть
+            //neuronet.trainer(img); // передача изображения в обучатель
         }
-        //System.out.println(sc);
-        ImageIO.write(img, "PNG", f); // сохранение изображения
+
+        //ImageIO.write(img, "PNG", f); // выгрузка изображений
+
         sc++;
     }
 }
