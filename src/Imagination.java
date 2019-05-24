@@ -71,8 +71,7 @@ public class Imagination {
         //neuronet.preporation(image); // метод проверки нейросети одним символом
         //neuronet.trainer(image); // метод обучение нейросети одним символом
 
-        string = neuronet.getString(); // получение результата оцифровывания
-        System.out.println();
+        string = NeuroNet.getString(); // получение результата оцифровывания
         System.out.print(string); // его вывод
     }
 }
