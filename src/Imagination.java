@@ -35,7 +35,6 @@ public class Imagination {
         double[][] pixels = new double[height][width]; // массив для передачи значений в сегментатор
 
         for (int row = 0; row < height; row++) {
-            //System.out.println();
             for (int col = 0; col < width; col++) {
                 Color rgb = new Color(image.getRGB(col, row)); // перевод в RGB-значение
                 double red = 1 - (double) rgb.getRed()/255;
