@@ -1,5 +1,7 @@
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -16,20 +18,18 @@ import java.io.IOException;
 // 8) возможность подать в обучатель_нейросети один единственный символ (для удобства) - не использовался
 
 public class Imagination {
-    public static void main(String[] args) throws IOException { // запускает работу всего проекта
-        Finder finder = new Finder();
-        NeuroNet neuronet = new NeuroNet();
-        BufferedImage image = null; // изображение для оцифровки
+    static Finder finder = new Finder();
+    static NeuroNet neuronet = new NeuroNet();
+
+    // ЗАПУСК
+    public static void main(String[] args) { // запускает работу всего проекта
+        new GUI("NeuroText");
+    }
+
+    // ПОДГОТОВКА ЗАГРУЗКИ ВХОДНЫХ ДАННЫХ В СЕГМЕНТАТОР_ТЕКСТА
+    static String starter (BufferedImage image) throws IOException {
         String string; // строка с результатом оцифровки
-        String path = "C:\\Users\\user\\Desktop\\Diplom-master\\Diplom-master\\src\\пр1.png"; // путь к файлу, который нужно оцифровать
-        File f = new File(path);
-
-        try {
-            image = ImageIO.read(f); // загрузка изображения
-        } catch (IOException e) {
-            System.out.println("Error: " + e);
-        }
-
+        assert image != null;
         int width = image.getWidth(); // ширина изображения
         int height = image.getHeight(); // высота изображения
         double[][] pixels = new double[height][width]; // массив для передачи значений в сегментатор
@@ -49,7 +49,7 @@ public class Imagination {
             }
         }
 
-        // быстрая генерация весов в БД_весов
+         // быстрая генерация весов в БД_весов
         /*int ne = 1;
         for(int x = 0; x < 40; x++) {
             FileWriter fv = new FileWriter("C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Data/w1."+ne+" 784.txt"); // запись текста в файл
@@ -66,13 +66,20 @@ public class Imagination {
             ne++;
         }*/
 
+        neuronet.clearFinalString(); // вызов чистильщика_строк для интерфейса
+        neuronet.clearIm(); // обнуление счетчика очереди
+
         finder.stringFind(pixels, height, width); // основной метод запуска нейросети
-        //neuronet.preporation(image); // метод проверки нейросети одним символом
+        // neuronet.preporation(image); // метод проверки нейросети одним символом
         //neuronet.trainer(image); // метод обучение нейросети одним символом
 
-        string = NeuroNet.getString(); // получение результата оцифровывания
-        System.out.print(string); // его вывод
+         // сохранение строки-результата в буфер обмена
+         string = NeuroNet.getString();
+         StringSelection stringSelection = new StringSelection(string);
+         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+         clipboard.setContents(stringSelection, null);
+
+        //System.out.print(string); // его вывод
+        return string;
     }
 }
-
-

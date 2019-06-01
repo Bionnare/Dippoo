@@ -1,5 +1,6 @@
-import java.applet.Applet;
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,14 +22,14 @@ import java.util.List;
 // 12) выгрузка символов в папку "Save", полученных в искателе_символов, в виде изображений (для проверки)
 // 13) возможность сегментатора отправлять полученные изображения вместо нейросети в обучатель_нейросети
 
-public class Finder extends Applet {
+public class Finder {
     NeuroNet neuronet = new NeuroNet();
     boolean isEmpty1 = true, isEmpty2 = true, isEmpty3 = true; // булеаны для пустых массивов, в которые сохраняются строки текста (нужны как условие записи искателями полученных ими значений)
     boolean whiteString = false; // нахождение конечной границы строки текста (нужны как условие записи искателями, полученных ими, значений)
     boolean analyzerString = false; // флаг работы искателя_строк (нужен для записи значений, полученных им)
     boolean analyzerWord = false; // флаг работы искателя_слов (нужен для записи значений, полученных им)
     boolean analyzerLetter = false; // флаг работы искателя_символов (нужен для записи значений, полученных им)
-    double pict[][]; // временный массив
+    double[][] pict; // временный массив
     int n = 0, nn = 0, nnn = 0; // временные переменные для создания новых изображений (для определения размеров полученного массива на выходе из каждого искателя)
 
     // ИСКАТЕЛЬ СТРОК
@@ -52,7 +53,7 @@ public class Finder extends Applet {
                 }
             }
             if ((!isEmpty1 & whiteString) | (!isEmpty1 & i == height - 1)) { // находим конечную границу строки текста
-                double newPict[][] = new double[n][width]; // идентификация массива для полученной строки
+                double[][] newPict = new double[n][width]; // идентификация массива для полученной строки
 
                 for (int q = 0; q < n; q++) {
                     for (int w = 0; w < width; w++) {
@@ -60,7 +61,7 @@ public class Finder extends Applet {
                     }
                 }
 
-                //crimg(newPict, n, width); // выгрузка строк как изображений
+                //imager(newPict, n, width); // выгрузка строк как изображений
                 wordFind(newPict, n, width); // передача массива в искатель_слов
 
                 neuronet.textFormer(999); // передача в составитель_текста информации о присутствии '\n'
@@ -171,13 +172,13 @@ public class Finder extends Applet {
         }
 
         double average; // средний порог значений пикселей для полной одной строки
-        sumCol = 0;
+        double sumCol2 = 0;
 
         // находим среднее значение яркости пикселей для всей строки, которое будет являться порогом для средних значений каждого столбца
         for (int e = 0; e < avrArr.length; e++) {
-            sumCol += avrArr[e];
+            sumCol2 += avrArr[e];
         }
-        average = sumCol / avrArr.length;
+        average = sumCol2 / avrArr.length;
         average = Math.round(average * 100) / 100.0;
 
         int[] binaryZone = new int[avrArr.length]; // здесь храниятся индексы столбцов строки
@@ -210,7 +211,7 @@ public class Finder extends Applet {
                 }
             }
             if ((!isEmpty2 & whiteString) | (!isEmpty2 & i == width - 1)) { // находим конечную границу слова
-                double newPict[][] = new double[height][nn]; // идентификация массива для нового слова
+                double[][] newPict = new double[height][nn]; // идентификация массива для нового слова
 
                 for (int q = 0; q < height; q++) {
                     for (int w = 0; w < nn; w++) {
@@ -218,7 +219,7 @@ public class Finder extends Applet {
                     }
                 }
 
-                //crimg(newPict, height, nnn); // выгрузка слов как изображений
+                //imager(newPict, height, nnn); // выгрузка слов как изображений
                 letterFind(newPict, height, nn); // передача слова в искатель_символов
 
                 neuronet.textFormer(666); // передача в составитель_текста информации о присутствии ' '
@@ -257,13 +258,13 @@ public class Finder extends Applet {
         }
 
         double average; // средний порог значений пикселей для полного одного слова
-        sumCol = 0;
+        double sumCol2 = 0;
 
         // находим среднее значение яркости пикселей для всего слова
         for (int e = 0; e < avrArr.length; e++) {
-            sumCol += avrArr[e];
+            sumCol2 += avrArr[e];
         }
-        average = sumCol / avrArr.length;
+        average = sumCol2 / avrArr.length;
         average = Math.round(average * 100) / 100.0;
         average = average * 0.1;
 
@@ -478,7 +479,7 @@ public class Finder extends Applet {
                 }
             }
             if ((!isEmpty3 & whiteString) | (!isEmpty3 & i == width - 1)) { // записываем конечную границу символа
-                double newPict[][] = new double[height][nnn]; // идентификация массива для нового символа
+                double[][] newPict = new double[height][nnn]; // идентификация массива для нового символа
 
                 for (int q = 0; q < height; q++) {
                     for (int w = 0; w < nnn; w++) {
@@ -486,7 +487,7 @@ public class Finder extends Applet {
                     }
                 }
                 if (nnn > 3) { // используем массивы с шириной больше '3'
-                    crimg(newPict, height, nnn); // создание изображения символа
+                    imager(newPict, height, nnn); // создание изображения символа
                 }
 
                 // устанавливаем значения по умолчанию
@@ -502,7 +503,7 @@ public class Finder extends Applet {
         return pix;
     }
 
-    // производит запись строк пикселей во временый массив pict[][] для каждого искателя
+    // ЗАПИСЬ СТРОК МАССИВОВ ДЛЯ КАЖДОГО ИСКАТЕЛЯ
     public void zoner(double[][] pix, int height, int width, int i) {
 
         if (analyzerString) { // для искателя строк
@@ -530,14 +531,14 @@ public class Finder extends Applet {
 
     int sc = 1; // счетчик файлов
 
-    // преобразование полученного массива из искателя_символов в изображение и отправка его в нейросеть
-    public void crimg(double[][] pixels, int n, int w) throws IOException {
+    // ПРЕОБРАЗОВАНИЕ ПОЛУЧЕННОГО МАССИВА ИЗ ИСКАТЕЛЯ_СИМВОЛОВ В ИЗОБРАЖЕНИЕ И ОТПРАВКА В НЕЙРОСЕТЬ
+    public void imager (double[][] pixels, int n, int w) throws IOException {
         BufferedImage img = new BufferedImage(w, n, BufferedImage.TYPE_INT_RGB);
 
-        //String string = "C:/Users/user/Desktop/Diplom-master/Diplom-master/src/Save/img" + sc + ".png";
-        //File f = new File(string);
+        String string = "src/Save/img" + sc + ".png";
+        File f = new File(string);
 
-        int im[] = new int[n * w]; // массив со значениями пикселей, на основе которого будет создаваться изображение
+        int[] im = new int[n * w]; // массив со значениями пикселей, на основе которого будет создаваться изображение
         int i = 0;
 
         for (int y = 0; y < n; y++) { // заполнение массива
